@@ -2,8 +2,11 @@ const path = require('path');
 const ESLintPlugin = require('eslint-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin'); // Плагин для очистки папки dist
+const MiniCssExtractPlugin = require('mini-css-extract-plugin'); // Плагин для извлечения CSS в отдельные файлы
 
 module.exports = {
+  mode: 'production', // Устанавливаем режим сборки
   entry: path.resolve(__dirname, './src/index.tsx'),
   module: {
     rules: [
@@ -22,13 +25,16 @@ module.exports = {
       {
         test: /\.css$/,
         exclude: /\.module\.css$/,
-        use: ['style-loader', 'css-loader']
+        use: [
+          MiniCssExtractPlugin.loader, // Извлечение CSS в отдельные файлы
+          'css-loader'
+        ]
       },
       {
         test: /\.module\.css$/i,
         exclude: /node_modules/,
         use: [
-          'style-loader',
+          MiniCssExtractPlugin.loader,
           {
             loader: 'css-loader',
             options: {
@@ -54,7 +60,12 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './public/index.html'
     }),
-    new Dotenv()
+    new Dotenv(),
+    new CleanWebpackPlugin(), // Добавляем плагин для очистки папки dist
+    new MiniCssExtractPlugin({
+      filename: '[name].[contenthash].css', // Генерация CSS файлов с хешированием
+      chunkFilename: '[id].[contenthash].css'
+    })
   ],
   resolve: {
     extensions: [
@@ -83,7 +94,8 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, './dist'),
-    filename: 'bundle.js'
+    filename: '[name].[contenthash].js', // Генерация JS файлов с хешированием
+    clean: true // Очистка output директории перед каждой сборкой
   },
   devServer: {
     static: path.join(__dirname, './dist'),
